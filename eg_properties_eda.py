@@ -9,97 +9,84 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 plt.style.use('ggplot')
 
+props_top10 = pd.read_csv('props_top10.csv')
+props_clean = pd.read_csv('props_clean.csv')
 
-#read in sraped data file
-props_raw = pd.read_csv('propfinder.csv')
-#props_raw.head()
+sns.set_style("white")
+sns.despine()
+ylabels = range(0, 120, 20)
 
+#P/SQM SCATTER PLOT
 
-#CLEAN ADDRES FIELDS
-props_clean = props_raw
-props_clean['type_fromaddress']= list(map(lambda x: x.find("for Sale in"), props_clean['address']))
-props_clean['address2'] = props_clean.address.str.split("for Sale in")
-props_clean[['type_fromaddress', 'a1']] = pd.DataFrame(props_clean.address2.values.tolist(), index = props_clean.index)
-props_clean['a2'] = props_clean.a1.str.split(',')
-props_clean[['a2', 'a3']] = pd.DataFrame(props_clean.a2.values.tolist(), index = props_clean.index)
-props_clean = props_clean.drop(['ref', 'address2', 'a1'],1)
+'''
+props_clean_scatter = props_clean[['price', 'sqm']]
 
+props_clean_scatter = props_clean_scatter.loc[props_clean_scatter.apply(lambda x: np.abs(x - x.mean()) / x.std() < 3).all(axis=1)]
 
-#CLEAN BED AND BATH COLUMNS
-props_clean['bed2'] = props_clean.bed.str.split("+")
-props_clean['bed'] = list(map(lambda x: x[0] if isinstance(x, list) else x, props_clean['bed2']))
-props_clean['bed'] = props_clean['bed'].str.replace('+', '')
-props_clean['bed'] = props_clean['bed'].str.replace('studio', '0')
-props_clean['bed'] = props_clean['bed'].str.replace('N/A ', '')
-props_clean['bath'] = props_clean['bed'].str.replace('+', '')
+sns.despine()
 
+scat1 = sns.regplot(x="sqm", y="price", data=props_clean_scatter, fit_reg = False)
+plt.xlabel('SqM')
+plt.ylabel('Price (millions)')
 
-#CLEAN SQM COLUMNS
-props_clean['sqm'] = props_clean['sqm'].str.replace('\n', '')
-props_clean['sqm2'] = props_clean.sqm.str.split('/')
-props_clean[['sqft', 'sqm']] =  pd.DataFrame(props_clean.sqm2.values.tolist(), index = props_clean.index)
-props_clean['sqft']= props_clean['sqft'].str.replace('sqft', '').str.strip()
-props_clean['sqm']= props_clean['sqm'].str.replace('sqm', '').str.strip()
-props_clean['sqft']= props_clean['sqft'].str.replace(',', '').str.strip()
-props_clean['sqm']= props_clean['sqm'].str.replace(',', '').str.strip()
-props_clean = props_clean.drop('sqm2',1)
-
-props_clean.sqm = pd.to_numeric(props_clean.sqm)
-
-props_clean.sqm = pd.to_numeric(props_clean.sqm)
-props_clean.bed = pd.to_numeric(props_clean.bed)
-props_clean.bath = pd.to_numeric(props_clean.bath)
+ylabels = range(0, 120, 20)
+scat1.set(yticklabels=ylabels)
+sns.despine()
+plt.savefig('scat1.eps')
 
 
-#props_clean.describe()
+#LOG PRICE HISTOGRAM
+log_price = np.log(props_clean['price'])
+sns.distplot(log_price)
+plt.xlabel('Log(Price)')
+plt.xlim(10,20)
+sns.despine()
+plt.savefig('logp_hist.eps')
+'''
 
-#EXTRACT LAT LONGS
-props_clean.json2 = list(map(lambda x: json.loads(x), props_clean.json2))
-props_clean['geo'] = list(map(lambda x: x[1]['geo'].values(), props_clean.json2))
-props_clean.geo = list(map(lambda x: list(x), props_clean.geo))
-props_clean['lat'] = list(map(lambda x: x[1], props_clean.geo))
-props_clean['long'] = list(map(lambda x: x[2], props_clean.geo))
-
-
-props_clean = props_clean.drop({'json1', 'json2'}, 1)
-
-#CLEAN PRICE
-
-props_clean.price = props_clean.price.str.replace(',', '').str.strip()
-props_clean.price = pd.to_numeric(props_clean.price)
-
-
-#CREATE PSQM FIELD
-props_clean['psqm'] = props_clean.price/props_clean.sqm
-
-props_clean.psqm.describe()
-props_clean.sort_values(by = ['psqm'])
-
-props_clean = props_clean.drop(props_clean.loc[props_clean.psqm == 1].index)
+props_clean2 =props_clean.drop(props_clean.loc[props_clean.proptype == "Bungalow"].index)
+'''
+typeprice_boxplot = sns.boxplot(x="proptype", y="price", data=props_clean2)
+plt.ylim(0,3e7)
+plt.xlabel('Property Type')
+plt.ylabel('Price (millions)')
+typeprice_boxplot.set(yticklabels=range(0,35,5))
+sns.despine()
+plt.savefig('typeprice_boxplot.eps')
 
 
-#CLEAN PROP TYPE COLUMN
-props_clean['proptype'] = props_clean['proptype'].str.replace('iVilla', 'Villa')
-props_clean = props_clean.drop(props_clean.loc[props_clean.proptype == 'Compound'].index)
+props_box = props_clean2[['price', 'psqm', "proptype"]]
+
+#props_box = props_box.drop(props_box.loc[props_box.pqsm.apply(lambda x: np.abs(x - x.mean()) / x.std() < 3).all(axis=1)]
+q_psqm = props_box["psqm"].quantile(0.95)
+props_box=props_box[props_box["psqm"] < q_psqm]
+
+typepsqm_boxplot = sns.boxplot(x="proptype", y="psqm", data=props_box)
+#plt.xlabel('Property Type')
+plt.ylabel('Price/SqM')
+#typepsqm_boxplot.set(yticklabels=range(0,35,5))
+sns.despine()
+plt.savefig('typepsqm_boxplot.eps')
+
+'''
+
+#props_top10['logpsqm'] = np.log(props_top10['psqm'])
+
+q_psqm = props_top10["psqm"].quantile(0.95)
+props_top10_filtered=props_top10[props_top10["psqm"] < q_psqm]
+a= props_top10_filtered[['Developer', 'psqm']].groupby('Developer').agg("mean").sort_values("psqm", ascending = False)
 
 
 
-#################MATCHING COMPOUNDS AND DEVELOPERS
-#compounds = props_compounds.price.agg("count").sort_values(ascending = False)
-#compounds.to_csv('compounds.csv')
 
-developers = pd.read_csv('developer_lookup.csv')
 
-props_clean = props_clean.merge(developers,left_on = 'a2' , right_on = 'Compound')
-props_clean['Developer'] = props_clean['Developer'].str.strip()
+sns.set(font_scale = 0.8)
+sns.set_style("white")
+sns.boxplot(x="Developer", y="psqm", data=props_top10_filtered, order = a.index)
+plt.xlabel('Developer')
+plt.ylabel('Price/SqM')
+sns.despine()
+plt.savefig('typepsqm_boxplot.eps')
+#plt.ylim(4,15)
 
-developers_df = props_clean[['Developer', 'price', 'psqm']].groupby('Developer').agg({'Developer' : ['count'], 'price': ['mean'], 'psqm' : ['mean']})
-developers_df.columns = list(map(''.join, developers_df.columns.values))
-developers_df  = developers_df.sort_values(by = ['Developercount'],ascending = False)
-developers_df = developers_df.reset_index()
-developers_df = developers_df.drop(0)
-top10devs = developers_df[:-31]
-top10devs
-
-props_top10 = props_clean.loc[props_clean.Developer.isin(top10devs['Developer'])]
-
+plt.show()

@@ -102,4 +102,11 @@ top10devs = developers_df[:-31]
 top10devs
 
 props_top10 = props_clean.loc[props_clean.Developer.isin(top10devs['Developer'])]
+props_top10['Developer'] = props_top10['Developer'].str.replace('Hyde Park Developments', 'Hyde Park')
+props_top10['Developer'] = props_top10['Developer'].str.replace('Talaat Moustafa Group', 'Talaat Moustafa')
+
+###to csv
+
+props_top10.to_csv('props_top10.csv')
+props_clean.to_csv('props_clean.csv')
 
