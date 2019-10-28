@@ -70,11 +70,10 @@ plt.savefig('typepsqm_boxplot.eps')
 
 '''
 
-#props_top10['logpsqm'] = np.log(props_top10['psqm'])
 
 q_psqm = props_top10["psqm"].quantile(0.95)
 props_top10_filtered=props_top10[props_top10["psqm"] < q_psqm]
-a= props_top10_filtered[['Developer', 'psqm']].groupby('Developer').agg("mean").sort_values("psqm", ascending = False)
+a= props_top10_filtered[['Developer', 'psqm']].groupby('Developer').agg("count").sort_values("psqm", ascending = False)
 
 
 
@@ -89,4 +88,24 @@ sns.despine()
 plt.savefig('typepsqm_boxplot.eps')
 #plt.ylim(4,15)
 
-plt.show()
+#plt.show()
+
+emaardf = props_top10.loc[props_top10.Developer == 'Emaar']['psqm']
+palmhillsdf = props_top10.loc[props_top10.Developer == 'Palm Hills']['psqm']
+mountaindf = props_top10.loc[props_top10.Developer == 'Mountain View']['psqm']
+sodicdf = props_top10.loc[props_top10.Developer == 'SODIC']['psqm']
+tmgdf =  props_top10.loc[props_top10.Developer == 'Talaat Moustafa']['psqm']
+
+devs_anova  = stats.f_oneway(emaardf, mountaindf, sodicdf)
+print(devs_anova)
+
+#P/SQM FOR EMAAR, SODIC, TMG
+#F_onewayResult(statistic=631.505182590988, pvalue=1.50384551445256e-243)
+
+
+
+
+
+
+
+
